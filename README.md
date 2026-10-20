@@ -57,9 +57,10 @@ underscores (`gti_menu`, `gti_next`, …), so there is no dot/colon mix-up.
 
 ## The LIMIT strip
 
-Above the wall sits a strip of 32 sockets. It is the **maximum attempt counter**:
+Above the wall sits a hotbar-like strip: the **maximum attempt counter**.
 
-- it appears only when a limit is configured (`Max attempts` in the settings, `0` = unlimited),
+- it appears only when a limit is configured (`Max attempts` in the settings, `0` = unlimited)
+  and shows exactly as many sockets as that limit (up to 32), centred over the wall,
 - each revealed cell costs 1 attempt, a wrong guess 3, a hint 2,
 - the pips stay lime, then turn yellow, orange and red as the budget drains,
 - when the last pip is spent the round ends and the answer is revealed.

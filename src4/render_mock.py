@@ -73,12 +73,20 @@ for idx in range(256):
         rect(x - 0.34, y - 0.34, 0.36, 0.36, BED2)
         rect(x + 0.06, y - 0.04, 0.3, 0.34, BED2)
 
-# attempt strip
+# attempt strip: limit 16, 11 left -> centred 16 sockets, 11 lit
+LIMIT, LEFT = 16, 11
+pad = (32 - LIMIT) // 2
 rect(-8.7, 20.77, 17.4, 1.66, (26, 26, 30))
 for i in range(32):
     x = -8 + (i + 0.5) * 0.5
+    if not (pad <= i < pad + LIMIT):
+        continue
     rect(x - 0.19, 20.95, 0.38, 1.3, (12, 12, 16))
-    colour = (94, 169, 24) if i < 11 else (241, 175, 21) if i < 16 else (225, 97, 0) if i < 24 else (58, 58, 62)
+    if i - pad < LEFT:
+        tone = min(3, (LEFT * 3) // LIMIT)
+        colour = {0: (176, 42, 48), 1: (225, 97, 0), 2: (241, 175, 21), 3: (94, 169, 24)}[tone]
+    else:
+        colour = (86, 86, 92)
     rect(x - 0.14, 21.02, 0.28, 1.16, colour)
 # LIMIT label
 rect(-10.1, 20.95, 1.4, 1.3, (26, 26, 30))

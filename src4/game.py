@@ -53,6 +53,7 @@ def _constants() -> list[str]:
         "#sixteen": 16,
         "#twenty": 20,
         "#thirty": 30,
+        "#thirtytwo": STRIP_MAX,
         "#sixty": 60,
         "#hundred": 100,
         "#tenk": 10000,
@@ -82,6 +83,30 @@ def _defaults() -> list[str]:
 def _strip_functions() -> dict[str, str]:
     out: dict[str, str] = {}
     hide: list[str] = []
+    hide.append(
+        'execute if score #limit gti.var matches 1.. run data merge entity '
+        '@e[tag=gti.stripbar,limit=1] {block_state:{Name:"minecraft:black_concrete"}}'
+    )
+    hide.append(
+        'execute unless score #limit gti.var matches 1.. run data merge entity '
+        '@e[tag=gti.stripbar,limit=1] {block_state:{Name:"minecraft:structure_void"}}'
+    )
+    hide.append(
+        'execute if score #limit gti.var matches 1.. as @e[tag=gti.socket] run '
+        'data merge entity @s {block_state:{Name:"minecraft:black_concrete"}}'
+    )
+    hide.append(
+        'execute unless score #limit gti.var matches 1.. as @e[tag=gti.socket] run '
+        'data merge entity @s {block_state:{Name:"minecraft:structure_void"}}'
+    )
+    hide.append(
+        'execute if score #limit gti.var matches 1.. run data merge entity '
+        '@e[tag=gti.piplabel,limit=1] {text:{"text":"LIMIT","color":"#8FA8C8","bold":true}}'
+    )
+    hide.append(
+        'execute unless score #limit gti.var matches 1.. run data merge entity '
+        '@e[tag=gti.piplabel,limit=1] {text:""}'
+    )
     for index in range(STRIP_MAX):
         hide.append(
             f"execute if score #limit gti.var matches ..{index} run "
@@ -93,15 +118,17 @@ def _strip_functions() -> dict[str, str]:
     for tone, (block, _name) in enumerate(TONES):
         lines: list[str] = []
         for index in range(STRIP_MAX):
+            visible = (
+                f"if score #pad gti.var matches ..{index} "
+                f"if score #pad_end gti.var matches {index + 1}.. "
+            )
             lines.append(
-                f"execute if score #limit gti.var matches {index + 1}.. if score #left gti.var "
-                f"matches {index + 1}.. run data merge entity "
+                f"execute {visible}if score #left_end gti.var matches {index + 1}.. run data merge entity "
                 f"@e[tag=gti.pip,scores={{gti.id={index}}},limit=1] "
                 f'{{block_state:{{Name:"minecraft:{block}"}}}}'
             )
             lines.append(
-                f"execute if score #limit gti.var matches {index + 1}.. unless score #left gti.var "
-                f"matches {index + 1}.. run data merge entity "
+                f"execute {visible}unless score #left_end gti.var matches {index + 1}.. run data merge entity "
                 f"@e[tag=gti.pip,scores={{gti.id={index}}},limit=1] "
                 f'{{block_state:{{Name:"minecraft:gray_concrete"}}}}'
             )
@@ -113,6 +140,13 @@ def _strip_functions() -> dict[str, str]:
         "execute if score #left gti.var matches ..0 run scoreboard players set #left gti.var 0",
         "function gti:strip/hide",
         "execute unless score #limit gti.var matches 1.. run return 0",
+        "scoreboard players operation #pad gti.var = #thirtytwo gti.var",
+        "scoreboard players operation #pad gti.var -= #limit gti.var",
+        "scoreboard players operation #pad gti.var /= #two gti.var",
+        "scoreboard players operation #pad_end gti.var = #pad gti.var",
+        "scoreboard players operation #pad_end gti.var += #limit gti.var",
+        "scoreboard players operation #left_end gti.var = #pad gti.var",
+        "scoreboard players operation #left_end gti.var += #left gti.var",
         "scoreboard players set #tone gti.var 0",
         "scoreboard players operation #tmp gti.var = #left gti.var",
         "scoreboard players operation #tmp gti.var *= #three gti.var",

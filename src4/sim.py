@@ -247,7 +247,7 @@ class Sim:
             else:
                 pool = [e for e in pool if tag in e.tags]
         if "scores" in argtext:
-            for obj, spec in re.findall(r"(\w+)=([-0-9.]+)", argtext.split("scores={")[1].split("}")[0]):
+            for obj, spec in re.findall(r"([\w.]+)=([-0-9.]+)", argtext.split("scores={")[1].split("}")[0]):
                 def keep(e, obj=obj, spec=spec):
                     val = e.scores.get(obj, self.scores.get((e.nbt.get("Name", ""), obj), 0))
                     if ".." in spec:

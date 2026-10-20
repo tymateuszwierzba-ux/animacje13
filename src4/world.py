@@ -137,7 +137,7 @@ def build_world(vd: dict) -> list[str]:
 
     # -- attempt strip ---------------------------------------------------
     out.append(block_display("black_concrete", 0, STRIP_Y, 0.24, 17.4, 1.66, 0.08,
-                             ("gti.entity", "gti.strip")))
+                             ("gti.entity", "gti.strip", "gti.stripbar")))
     for index in range(STRIP_MAX):
         x = STRIP_LEFT + (index + 0.5) * STRIP_PITCH
         out.append(block_display("black_concrete", x, STRIP_Y, 0.30, 0.42, 1.36, 0.10,
@@ -146,7 +146,8 @@ def build_world(vd: dict) -> list[str]:
                                  ("gti.entity", "gti.strip", "gti.pip")))
         out.append(_set_id(x, STRIP_Y, 0.38, "gti.pip", index))
     out.append(text_display(line("LIMIT", MUTED, True), STRIP_LEFT - 0.85, STRIP_Y, 0.46,
-                            0.42, tag_list=("gti.entity", "gti.strip"), align="right"))
+                            0.42, tag_list=("gti.entity", "gti.strip", "gti.piplabel"),
+                            align="right"))
     return out
 
 
