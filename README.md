@@ -1,127 +1,130 @@
-# GUESS THE ITEM 3.0 — animowana plansza + pełne GUI (Minecraft Java)
+# GUESS THE ITEM 4.0 — block wall, bedrock shield, max-attempt strip (Minecraft Java)
 
-Datapack, w którym zgadujesz ukryty przedmiot po fragmentach jego ikony. Zamiast
-zwykłej siatki z kolorowych bloków dostajesz **holograficzną planszę 3D** z animacjami,
-**osiem ekranów dialogowego GUI**, katalog wszystkich przedmiotów z podziałem na
-kategorie, podpowiedzi, budżet punktów i statystyki.
+A datapack minigame: a hidden item icon is buried in a **wall of bedrock blocks**. Carve
+cells out of the wall, one coloured block at a time, until you can recognise the icon — then
+hold the item and guess.
 
-Bez modów, bez resource packa, bez pluginów — wszystko na komendach i encjach display.
+- **The board is made of blocks.** Every one of the 256 cells is real `bedrock`; revealing a
+  cell swaps it for the concrete block matching that pixel of the item texture. No fake grid,
+  no floating pictures — a wall you can look at from any angle.
+- **The answer is hidden behind bedrock.** The icon sits on the wall, the bedrock curtain
+  seals the front, and it opens only for the cells you have earned.
+- **A hotbar-style strip above the wall is the max-attempt counter.** It appears only when a
+  limit is set, and drains pip by pip as the round is played.
+- **All text is English**, and dialog ids use the namespace form: `gti:menu`, not `gti.menu`.
 
-## Trzy wersje w tym repozytorium
+No mods, no resource pack, no plugins — commands and display entities only.
 
-| Plik ZIP | Minecraft | `pack_format` | Przedmioty | Kategorie (bloki / sprzęt / jedzenie / moby / materiały / inne) |
-|---|---|---|---|---|
-| `Guess_the_item_1.21.11_v3.zip` | 1.21.11 | 94.1 | **1504** | 1002 / 95 / 52 / 93 / 79 / 183 |
-| `Guess_the_item_26.2_v3.zip` | 26.2 | 107.1 | **1536** | 1031 / 95 / 52 / 94 / 79 / 185 |
-| `Guess_the_item_26.3_v3.zip` | 26.3 | 121.0 | **1657** | 1134 / 95 / 52 / 94 / 79 / 203 |
+## Three packs in this repository
 
-Każdy ZIP jest samodzielny — wrzucasz dokładnie jeden, pasujący do wersji gry.
-Wersja 2.0 (`Guess_the_item_Java_26.2_v2.zip`) została w repo dla porównania.
+| ZIP | Minecraft | `pack_format` | Items | Blocks | Gear | Food | Mobs | Materials | Other |
+|---|---|---|---|---|---|---|---|---|---|
+| `Guess_the_item_1.21.11_v4.zip` | 1.21.11 | 94.1 | **1504** | 1002 | 95 | 52 | 93 | 79 | 183 |
+| `Guess_the_item_26.2_v4.zip` | 26.2 | 107.1 | **1536** | 1031 | 95 | 52 | 94 | 79 | 185 |
+| `Guess_the_item_26.3_v4.zip` | 26.3 | 121.0 | **1657** | 1134 | 95 | 52 | 94 | 79 | 203 |
 
-## Instalacja
+Each ZIP is standalone — install exactly one, matching your game version.
+The 3.0 packs (`*_v3.zip`) and the 2.0 pack stay in the repository for comparison.
 
-1. Wrzuć ZIP **bez rozpakowywania** do:
-   - singleplayer: `.minecraft/saves/NAZWA_ŚWIATA/datapacks/`
-   - serwer: `NAZWA_ŚWIATA/datapacks/`
-2. W grze (jako operator): `/reload`
-3. Znajdź dużą otwartą przestrzeń w **Overworldzie** i wpisz `/function gti:setup`.
-   Plansza stanie 30 klocków przed Tobą i 11 nad ziemią, kamera sama obróci się w jej stronę.
-4. Otwórz panel gospodarza (**MENU → Panel gospodarza** albo `/dialog show @s gti:host`),
-   wybierz hasło i ustawienia, potem **Rozpocznij rundę**.
+## Install
 
-`/function gti:remove` usuwa planszę i wszystkie efekty, `/function gti:view` ustawia kamerę,
-`/function gti:start` startuje rundę bez klikania.
+1. Drop the ZIP **without unpacking** into:
+   - single player: `.minecraft/saves/WORLD_NAME/datapacks/`
+   - server: `WORLD_NAME/datapacks/`
+2. In game, as an operator: `/reload`
+3. Stand on flat open ground in the **Overworld** and run `/function gti:setup`.
+   The wall is built 30 blocks north of you and the camera turns to face it.
+4. Open the host panel (**MENU → HOST PANEL** or `/function gti:host`), pick an item or leave
+   it random, adjust the settings, then **START ROUND**.
 
-## Sterowanie
+`/function gti:remove` removes the board and every effect, `/function gti:view` re-centres the
+camera, `/function gti:start` starts a round without clicking through the menu.
 
-| Akcja | Jak |
+## Controls
+
+| Action | How |
 |---|---|
-| Odsłoń paczkę wokół klikniętego pola | LPM / PPM na kafelku planszy |
-| Odsłoń paczkę losowo | **ODKRYJ** w panelu lub `/trigger gti.pixel set 1` |
-| Zgadnij | przedmiot w głównej ręce + **ZGADUJ** lub `/trigger gti.guess set 1` |
-| Podpowiedź (3 poziomy) | **PODPOWIEDŹ** lub `/trigger gti.hint set 1` |
-| Menu | **MENU**, `/trigger gti.menu` lub `/dialog show @s gti:menu` |
-| Nowa runda | **Nowa runda** lub `/trigger gti.next set 1` |
-| Stop / sprzątanie | `/function gti:stop`, `/function gti:remove` |
-| Pauza | przycisk **II** w panelu (gospodarz) |
+| Crack a cell | left or right click the bedrock wall |
+| Reveal cells at random | **REVEAL** on the wall console or `/trigger gti_reveal set 1` |
+| Guess | hold the item in your main hand and press **GUESS** or `/trigger gti_guess set 1` |
+| Hint (3 levels) | **HINT** or `/trigger gti_hint set 1` |
+| Menu / dialogs | **MENU**, `/function gti:menu` or `/trigger gti_menu set 1` |
+| New round | **START ROUND** or `/trigger gti_next set 1` |
+| Stop | `/function gti:stop` |
 
-Każdy gracz w promieniu 64 klocków jest widzem i może zgadywać — nie trzeba nic
-konfigurować. Rundy, statystyki i rekordy są per gracz.
+Dialog ids use the namespace form (`gti:menu`, `gti:host`, …); trigger objectives use
+underscores (`gti_menu`, `gti_next`, …), so there is no dot/colon mix-up.
 
-## Punktacja
+## The LIMIT strip
 
-- odkryty piksel: **+1 punkt** budżetu,
-- błędna odpowiedź: **+4 punkty** i licznik prób,
-- podpowiedź: **+8 punktów** (maks. 3 stopnie),
-- budżet ustawiasz suwakiem (0 = brak limitu); po jego wyczerpaniu runda przegrywa się
-  z animacją i podsumowaniem,
-- wygrywa **mniej prób**, przy remisie **mniej odkrytych pikseli**,
-- rekord gracza to `próby × 1000 + piksele` — mniejsza wartość jest lepsza,
-- przedmioty z tej samej grupy (np. `copper_block` i `waxed_copper_block`) są
-  akceptowane jako poprawna odpowiedź — w sumie **67 grup**.
+Above the wall sits a strip of 32 sockets. It is the **maximum attempt counter**:
 
-## Co jest w GUI
+- it appears only when a limit is configured (`Max attempts` in the settings, `0` = unlimited),
+- each revealed cell costs 1 attempt, a wrong guess 3, a hint 2,
+- the pips stay lime, then turn yellow, orange and red as the budget drains,
+- when the last pip is spent the round ends and the answer is revealed.
 
-| Dialog | Co robi |
+## GUI
+
+| Dialog | Contents |
 |---|---|
-| `gti:menu` | główne menu: nowa runda, odkrywanie, zgadywanie, podpowiedź, statystyki, panel gospodarza, katalog, zasady |
-| `gti:host` | panel gospodarza: start/stop, ustawienia, katalog, hasło z ręki, losowy przedmiot, wpisanie ID, presety CHILL/NORMAL/HARD |
-| `gti:settings` | suwaki: paczka pikseli 1–16, budżet 0–256, tryb odkrywania (RĘCZNIE / PO BŁĘDZIE / AUTO), piksele na start, podpowiedzi |
-| `gti:rules` | skrót zasad i punktacji |
-| `gti:stats` | wygrane, rekord, seria, próby, celność + reset własnych statystyk |
-| `gti:item_id` | wpisanie dowolnego identyfikatora jako hasła |
-| `gti:catalogue/index` i `gti:catalogue/<kategoria>/<strona>` | katalog wszystkich ID: „wszystkie” + 6 kategorii, po 24 pozycje na stronę |
-| `gti:summary` | dynamiczne podsumowanie rundy (wynik, rekord, statystyki) |
+| `gti:menu` | start, reveal, guess, hint, stats, host panel, catalogue, rules |
+| `gti:host` | start/stop, settings, catalogue, held item, random answer, typed id, presets, stats |
+| `gti:settings` | max attempts, cells per click, free cells, time limit, reveal mode, hints |
+| `gti:rules` | short rules and scoring |
+| `gti:stats` | personal stats and reset |
+| `gti:item_id` | type any item id as the answer |
+| `gti:catalogue/index` + `gti:catalogue/<category>/<page>` | every item id, 24 per page |
+| `gti:summary` | end-of-round summary |
 
-Dodatkowo: **bossbary** budżetu i odliczania, panel boczny z 6 licznikami, paskiem
-budżetu, paskiem postępu i 4 przyciskami, dolne karty z podpowiedziami oraz
-unoszący się tytuł nad planszą.
+Settings and the item id field are real dialog inputs: the values are interpolated into
+`/function gti:cfg/apply` and `/function gti:data/set_id` macros.
 
-## Animacje
+## Scoring
 
-- intro: **migawka (shutter)** zamyka i otwiera planszę, po kafelkach rozchodzą się
-  kolorowe fale, potem wielkie odliczanie **3–2–1**,
-- plansza: skaner, dwa świetliki krążące po obwodzie, pulsujące narożne klejenty,
-  unoszące się litery tytułu, drgające kafelki po trafieniu,
-- wygrana: fala kolorów po kolumnach, dwa pierścienie cząstek, konfetti i fajerwerki,
-- przegrana: fala po wierszach i przygaszenie planszy,
-- finał: podsumowanie w GUI + sprzątanie scenografii.
+- revealed cell **1 attempt**, wrong guess **3 attempts**, hint **2 attempts**,
+- the answer may also be a variant of the item (copper vs waxed copper, stone bricks vs
+  infested stone bricks) — 67 equivalence groups are included,
+- unlimited mode (limit `0`) still tracks attempts for the personal best,
+- personal best = fewest attempts in a solved round, stored as attempts + 1 so a flawless
+  round (`0` attempts) is still recorded.
 
-## Struktura paczki
+## What is in the pack
 
 ```
-pack.mcmeta                  # min_format/max_format = wersja gry
-pack.png                     # wygenerowana ikona 128×128
-README_PL.md                 # instrukcja w paczce
-LISTA_PRZEDMIOTOW.txt        # wszystkie ID i nazwy dla tej wersji
-data/gti/function/           # logika, animacje, UI, dane
-data/gti/dialog/             # 137–151 dialogów (menu, panel, katalog, ...)
-data/gti/tags/item/          # answers + 67 grup equivalent/*
-data/minecraft/tags/function # load + tick
+pack.mcmeta                   pack metadata (min/max format)
+pack.png                      generated 128×128 icon
+README_EN.md                  this readme, embedded in every pack
+ITEM_LIST.txt                 every id with its English name
+data/gti/function/            logic, animations, art data, world build
+data/gti/dialog/              dialogs (menu, host, settings, catalogue, …)
+data/gti/tags/item/           answer tags + 67 equivalence tags
+data/minecraft/tags/function  load + tick
 ```
 
-## Rozwój
+## Building from source
 
-Generator i walidator są w `src/` (czysty Python 3, bez zależności):
+The generators live in `src4/` (4.0) and `src/` (3.0). All textures are baked into command
+data — no downloads at runtime.
 
 ```bash
-cd src
-python3 build.py       # buduje build/<wersja>/ i trzy ZIP-y w katalogu głównym
-python3 validate.py    # JSON, SNBT, referencje funkcji/dialogów, składnia scoreboardów
+cd src4
+python3 build.py       # writes Guess_the_item_<version>_v4.zip and build4/<version>/
+python3 validate.py    # static checks: JSON, macros, function/dialog references
+python3 smoke.py       # headless play-through against build4/26.2
 ```
 
-Dodatkowo każdą paczkę można sprawdzić parserem `mecha`:
+`mecha` can verify the generated functions against a vanilla command tree:
 
 ```bash
-cd build/26.2 && mecha . -m 1.21
+cd build4/26.2 && mecha . -m 1.21
 ```
 
-Katalogi `build/` są artefaktem — można je regenerować w każdej chwili.
+## Notes
 
-## Uwagi
-
-- Planszę buduj w **Overworldzie** (datapack sam tego pilnuje i wypisze komunikat).
-- `/function gti:setup` wymaga uprawnień operatora; gracze bez OP mogą używać
-  `/trigger gti.menu` i przycisków w GUI.
-- Dialogi wymagają Minecrafta 1.21.9+ — wszystkie trzy wersje w tym repo je mają.
-- Po `/reload` wystarczy ponownie wpisać `/function gti:setup`, żeby odświeżyć planszę.
+- Build the board in the **Overworld**; the pack refuses other dimensions.
+- `/function gti:setup` needs operator rights. Players without OP can use the wall console and
+  the `/trigger gti_*` objectives.
+- The board wants a flat area with roughly 30 blocks of free space in front of the wall.
+- A partial reveal is intentional: the uncracked cells stay bedrock even after the answer is
+  shown, so the picture tears itself out of the rock.
