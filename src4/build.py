@@ -115,7 +115,9 @@ No mods, no resource pack, no plugins.
 4. Open the menu and press **START ROUND**.
 
 `/function gti:remove` removes the board and every effect, `/function gti:view` re-centres
-the camera, `/function gti:start` starts a round without clicking.
+the camera, `/function gti:start` starts a round without clicking, and `/function gti:fix`
+rebuilds the wall in place and clears any leftover round state (use it if a round ever
+looks stuck - START ROUND now also restarts a stuck round on its own).
 
 ## Controls
 

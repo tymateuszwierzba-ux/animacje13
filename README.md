@@ -38,7 +38,12 @@ The 3.0 packs (`*_v3.zip`) and the 2.0 pack stay in the repository for compariso
    it random, adjust the settings, then **START ROUND**.
 
 `/function gti:remove` removes the board and every effect, `/function gti:view` re-centres the
-camera, `/function gti:start` starts a round without clicking through the menu.
+camera, `/function gti:start` starts a round without clicking through the menu, and
+`/function gti:fix` rebuilds the wall in place and clears any leftover round state.
+
+> If a round ever looks stuck, press **START ROUND** again (it restarts a stuck round) or run
+> `/function gti:fix`. The intro and the finale are driven by latched thresholds plus a
+> watchdog, so they always finish even after a `/reload` in the middle of an animation.
 
 ## Controls
 

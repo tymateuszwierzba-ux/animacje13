@@ -8,6 +8,10 @@ from model import (
     COLS,
     ROWS,
     STRIP_MAX,
+    SHUTTER_CLOSED,
+    SHUTTER_OPEN,
+    shutter_transform,
+    transform_nbt,
     mc,
 )
 from world import build_world, world_text
@@ -251,6 +255,13 @@ def game_functions(vd: dict) -> dict[str, str]:
         "execute if score #state gti.var matches 1 run function gti:intro/tick",
         "execute if score #state gti.var matches 2 run function gti:round/tick",
         "execute if score #state gti.var matches 3 run function gti:finale/tick",
+        # watchdogs: if an intro or finale ever stops making progress, finish it
+        "execute if score #state gti.var matches 1 run scoreboard players add #g_intro gti.var 1",
+        "execute unless score #state gti.var matches 1 run scoreboard players set #g_intro gti.var 0",
+        "execute if score #state gti.var matches 1 if score #g_intro gti.var matches 110.. run function gti:intro/go",
+        "execute if score #state gti.var matches 3 run scoreboard players add #g_fin gti.var 1",
+        "execute unless score #state gti.var matches 3 run scoreboard players set #g_fin gti.var 0",
+        "execute if score #state gti.var matches 3 if score #g_fin gti.var matches 240.. run function gti:finale/end3",
         "execute if score #clock gti.var matches 0 run function gti:hud/refresh",
         "execute if score #clock gti.var matches 0 if score #state gti.var matches 2 run function gti:timer/refresh",
         "execute if score #clock gti.var matches 10 if score #state gti.var matches 0 run function gti:fx/idle",
@@ -272,6 +283,21 @@ def game_functions(vd: dict) -> dict[str, str]:
         "scoreboard players set #used gti.var 0",
         "scoreboard players set #revealed gti.var 0",
         "scoreboard players set #hint_stage gti.var 0",
+        "scoreboard players set #anim gti.var 0",
+        "scoreboard players set #picked gti.var 0",
+        "scoreboard players set #shown gti.var 0",
+        "scoreboard players set #g_intro gti.var 0",
+        "scoreboard players set #g_fin gti.var 0",
+        "scoreboard players set #did_seal gti.var 0",
+        "scoreboard players set #did_restore gti.var 0",
+        "scoreboard players set #did_pick gti.var 0",
+        "scoreboard players set #did_open gti.var 0",
+        "scoreboard players set #did_go gti.var 0",
+        "scoreboard players set #did_confetti gti.var 0",
+        "scoreboard players set #did_fire gti.var 0",
+        "scoreboard players set #did_end gti.var 0",
+        "scoreboard players set #did_end2 gti.var 0",
+        "scoreboard players set #did_end3 gti.var 0",
         'data modify storage gti:cfg status set value "PRESS START"',
         'data modify storage gti:cfg hint set value "NO HINT YET"',
         "function gti:strip/refresh",
@@ -299,6 +325,49 @@ def game_functions(vd: dict) -> dict[str, str]:
         "execute at @e[tag=gti.anchor,limit=1] run tp @s ~0.5 ~ ~30 180 -17",
     ])
 
+    # /function gti:fix - rebuild the wall in place and clear any leftover state
+    f["fix"] = mc([
+        'execute unless entity @e[tag=gti.anchor,limit=1] run return run tellraw @s {"text":"No board here - run /function gti:setup first.","color":"red"}',
+        "execute at @e[tag=gti.anchor,limit=1] run function gti:fix/at",
+    ])
+    f["fix/at"] = mc([
+        "function gti:remove",
+        "execute align xyz positioned ~ ~ ~ run function gti:world/build",
+        "scoreboard players set #state gti.var 0",
+        "scoreboard players set #result gti.var 2",
+        "scoreboard players set #anim gti.var 0",
+        "scoreboard players set #picked gti.var 0",
+        "scoreboard players set #shown gti.var 0",
+        "scoreboard players set #g_intro gti.var 0",
+        "scoreboard players set #g_fin gti.var 0",
+        "scoreboard players set #did_seal gti.var 0",
+        "scoreboard players set #did_restore gti.var 0",
+        "scoreboard players set #did_pick gti.var 0",
+        "scoreboard players set #did_open gti.var 0",
+        "scoreboard players set #did_go gti.var 0",
+        "scoreboard players set #did_confetti gti.var 0",
+        "scoreboard players set #did_fire gti.var 0",
+        "scoreboard players set #did_end gti.var 0",
+        "scoreboard players set #did_end2 gti.var 0",
+        "scoreboard players set #did_end3 gti.var 0",
+        "scoreboard players set #used gti.var 0",
+        "scoreboard players set #revealed gti.var 0",
+        "scoreboard players set #hint_stage gti.var 0",
+        "tag @a remove gti.player",
+        "tag @a remove gti.host",
+        "tag @s add gti.player",
+        "tag @s add gti.host",
+        "function gti:round/reset",
+        "function gti:fx/restore",
+        "function gti:fx/curtain_open",
+        "function gti:strip/refresh",
+        "function gti:hud/refresh",
+        'data modify storage gti:cfg status set value "PRESS START"',
+        'data modify storage gti:cfg hint set value "NO HINT YET"',
+        'tellraw @s [{"text":"Board repaired. ","color":"#8BE28B"},{"text":"Press START ROUND in the menu.","color":"gray"}]',
+        "dialog show @s gti:menu",
+    ])
+
     f["menu"] = mc(["dialog show @s gti:menu"])
     f["dialog"] = mc(["dialog show @s gti:menu"])
     f["help"] = mc(["dialog show @s gti:rules"])
@@ -308,11 +377,28 @@ def game_functions(vd: dict) -> dict[str, str]:
     f["random"] = mc(["function gti:data/random_lock"])
     f["play"] = mc(["function gti:reveal/request"])
     f["start"] = mc([
-        "execute if score #state gti.var matches 2..3 run return run tellraw @s {\"text\":\"A round is already running.\",\"color\":\"yellow\"}",
         "execute unless entity @e[tag=gti.anchor,limit=1] run return run tellraw @s {\"text\":\"Build the board first: /function gti:setup\",\"color\":\"red\"}",
+        "tag @s add gti.player",
+        "tag @s add gti.host",
+        # pressing START while a round is stuck simply restarts it
+        "execute if score #state gti.var matches 1.. run function gti:round/abort",
         "function gti:round/reset",
         "scoreboard players set #state gti.var 1",
         "scoreboard players set #anim gti.var 0",
+        "scoreboard players set #picked gti.var 0",
+        "scoreboard players set #shown gti.var 0",
+        "scoreboard players set #g_intro gti.var 0",
+        "scoreboard players set #g_fin gti.var 0",
+        "scoreboard players set #did_seal gti.var 0",
+        "scoreboard players set #did_restore gti.var 0",
+        "scoreboard players set #did_pick gti.var 0",
+        "scoreboard players set #did_open gti.var 0",
+        "scoreboard players set #did_go gti.var 0",
+        "scoreboard players set #did_confetti gti.var 0",
+        "scoreboard players set #did_fire gti.var 0",
+        "scoreboard players set #did_end gti.var 0",
+        "scoreboard players set #did_end2 gti.var 0",
+        "scoreboard players set #did_end3 gti.var 0",
         "scoreboard players add #round gti.var 1",
         "scoreboard players set #guesses gti.var 0",
         "scoreboard players set @a[tag=gti.player] gti.tries 0",
@@ -350,6 +436,21 @@ def game_functions(vd: dict) -> dict[str, str]:
     f["round/abort"] = mc([
         "scoreboard players set #state gti.var 0",
         "scoreboard players set #result gti.var 2",
+        "scoreboard players set #anim gti.var 0",
+        "scoreboard players set #picked gti.var 0",
+        "scoreboard players set #shown gti.var 0",
+        "scoreboard players set #g_intro gti.var 0",
+        "scoreboard players set #g_fin gti.var 0",
+        "scoreboard players set #did_seal gti.var 0",
+        "scoreboard players set #did_restore gti.var 0",
+        "scoreboard players set #did_pick gti.var 0",
+        "scoreboard players set #did_open gti.var 0",
+        "scoreboard players set #did_go gti.var 0",
+        "scoreboard players set #did_confetti gti.var 0",
+        "scoreboard players set #did_fire gti.var 0",
+        "scoreboard players set #did_end gti.var 0",
+        "scoreboard players set #did_end2 gti.var 0",
+        "scoreboard players set #did_end3 gti.var 0",
         "function gti:round/reset",
         "function gti:fx/curtain_open",
         "function gti:fx/restore",
@@ -359,46 +460,59 @@ def game_functions(vd: dict) -> dict[str, str]:
     ])
 
     # -------------------------------------------------------------- intro
+    # Every step is threshold based and latched with its own flag, so a skipped
+    # tick (reload, lag, a second start) can never strand the intro half way.
     f["intro/tick"] = mc([
         "scoreboard players add #anim gti.var 1",
-        "execute if score #anim gti.var matches 1 run function gti:intro/seal",
-        "execute if score #anim gti.var matches 10 run function gti:fx/restore",
-        "execute if score #anim gti.var matches 18 run function gti:intro/pick",
-        "execute if score #anim gti.var matches 26 run function gti:intro/open",
-        "execute if score #anim gti.var matches 54 run function gti:intro/go",
+        "execute if score #anim gti.var matches 1.. if score #did_seal gti.var matches 0 run function gti:intro/seal",
+        "execute if score #anim gti.var matches 10.. if score #did_restore gti.var matches 0 run function gti:intro/restore",
+        "execute if score #anim gti.var matches 18.. if score #did_pick gti.var matches 0 run function gti:intro/pick",
+        "execute if score #anim gti.var matches 26.. if score #did_open gti.var matches 0 run function gti:intro/open",
+        "execute if score #anim gti.var matches 54.. if score #did_go gti.var matches 0 run function gti:intro/go",
     ])
+    f["intro/restore"] = mc([
+        "function gti:fx/restore",
+        "scoreboard players set #did_restore gti.var 1",
+    ])
+    closed_nbt = transform_nbt(shutter_transform(False))
+    open_nbt = transform_nbt(shutter_transform(True))
     f["intro/seal"] = mc(
         [
             f"execute as @e[tag=gti.shutter,tag=gti.col{col}] run data merge entity @s "
-            f"{{start_interpolation:{col},interpolation_duration:8,transformation:"
-            f"{{scale:[1f,16f,0.3f],translation:[0f,0f,0f],left_rotation:[0f,0f,0f,1f],right_rotation:[0f,0f,0f,1f]}}}}"
+            f"{{start_interpolation:{col},interpolation_duration:8,transformation:{closed_nbt}}}"
             for col in range(COLS)
         ]
         + [
             "execute at @e[tag=gti.anchor,limit=1] run playsound minecraft:block.deepslate_bricks.place master @a[tag=gti.player] ~ ~ ~ 0.8 0.7",
             'data modify storage gti:cfg status set value "BEDROCK SEALED"',
             "function gti:hud/refresh",
+            "scoreboard players set #did_seal gti.var 1",
         ]
     )
     f["intro/pick"] = mc([
         "execute if score #source gti.var matches 1 run function gti:data/use_fixed",
         "execute unless score #source gti.var matches 1 run function gti:data/random_answer",
         'data modify storage gti:cfg status set value "ANSWER LOCKED"',
+        "scoreboard players set #picked gti.var 1",
+        "scoreboard players set #did_pick gti.var 1",
         "function gti:hud/refresh",
     ])
     f["intro/open"] = mc(
         [
             f"execute as @e[tag=gti.shutter,tag=gti.col{col}] run data merge entity @s "
-            f"{{start_interpolation:{abs(col - 8) + 2},interpolation_duration:10,transformation:"
-            f"{{scale:[1f,16f,0.3f],translation:[0f,18.2f,0f],left_rotation:[0f,0f,0f,1f],right_rotation:[0f,0f,0f,1f]}}}}"
+            f"{{start_interpolation:{abs(col - 8) + 2},interpolation_duration:10,transformation:{open_nbt}}}"
             for col in range(COLS)
         ]
         + [
             "execute at @e[tag=gti.anchor,limit=1] run playsound minecraft:block.deepslate_bricks.break master @a[tag=gti.player] ~ ~ ~ 0.8 1.2",
             "execute at @e[tag=gti.anchor,limit=1] run particle minecraft:block minecraft:bedrock ~ ~10.5 ~1.2 9 9 0.2 0.05 200 force @a[tag=gti.player]",
+            "scoreboard players set #did_open gti.var 1",
         ]
     )
     f["intro/go"] = mc([
+        "execute if score #state gti.var matches 2.. run return 0",
+        "execute if score #picked gti.var matches 0 run function gti:intro/pick",
+        "scoreboard players set #did_go gti.var 1",
         "scoreboard players set #state gti.var 2",
         "scoreboard players set #time gti.var 0",
         "scoreboard players set #auto gti.var 0",
@@ -770,24 +884,30 @@ def game_functions(vd: dict) -> dict[str, str]:
             "scoreboard players add #anim gti.var 1",
         ]
         + [
-            f"execute if score #anim gti.var matches {2 + 2 * col} as @e[tag=gti.cell,tag=gti.col{col}] run function gti:reveal/final"
+            f"execute if score #anim gti.var matches {2 + 2 * col}.. as @e[tag=gti.cell,tag=gti.col{col}] run function gti:reveal/final"
             for col in range(COLS)
         ]
         + [
-            "execute if score #anim gti.var matches 40 run function gti:fx/confetti",
-            "execute if score #anim gti.var matches 46 if score #result gti.var matches 1 run function gti:fx/fireworks",
-            "execute if score #anim gti.var matches 64 if score #result gti.var matches 1 run function gti:finale/summary",
-            "execute if score #anim gti.var matches 64 if score #result gti.var matches 0 run function gti:finale/summary",
-            "execute if score #anim gti.var matches 120 run function gti:finale/end",
-            "execute if score #anim gti.var matches 128 run function gti:finale/end2",
-            "execute if score #anim gti.var matches 138 run function gti:finale/end3",
+            "execute if score #anim gti.var matches 40.. if score #did_confetti gti.var matches 0 run function gti:finale/confetti",
+            "execute if score #anim gti.var matches 46.. if score #did_fire gti.var matches 0 if score #result gti.var matches 1 run function gti:finale/fireworks",
+            "execute if score #anim gti.var matches 64.. if score #shown gti.var matches 0 run function gti:finale/summary",
+            "execute if score #anim gti.var matches 120.. if score #did_end gti.var matches 0 run function gti:finale/end",
+            "execute if score #anim gti.var matches 128.. if score #did_end2 gti.var matches 0 run function gti:finale/end2",
+            "execute if score #anim gti.var matches 138.. if score #did_end3 gti.var matches 0 run function gti:finale/end3",
         ]
     )
+    f["finale/confetti"] = mc([
+        "function gti:fx/confetti",
+        "scoreboard players set #did_confetti gti.var 1",
+    ])
+    f["finale/fireworks"] = mc([
+        "function gti:fx/fireworks",
+        "scoreboard players set #did_fire gti.var 1",
+    ])
     f["finale/curtain"] = mc(
         [
             f"execute as @e[tag=gti.shutter,tag=gti.col{col}] run data merge entity @s "
-            f"{{start_interpolation:{abs(col - 8)},interpolation_duration:8,transformation:"
-            f"{{scale:[1f,16f,0.3f],translation:[0f,0f,0f],left_rotation:[0f,0f,0f,1f],right_rotation:[0f,0f,0f,1f]}}}}"
+            f"{{start_interpolation:{abs(col - 8)},interpolation_duration:8,transformation:{closed_nbt}}}"
             for col in range(COLS)
         ]
     )
@@ -806,10 +926,12 @@ def game_functions(vd: dict) -> dict[str, str]:
         'tellraw @a[tag=gti.player] [{"text":"Round over ","color":"#8FA8C8"},{"text":"• ","color":"dark_gray"},{"text":"attempts used: ","color":"gray"},{"score":{"name":"#used","objective":"gti.var"},"color":"#FF8996"},{"text":"  •  guesses: ","color":"gray"},{"score":{"name":"#guesses","objective":"gti.var"},"color":"#F6CF84"}]',
     ])
     f["finale/end"] = mc([
+        "scoreboard players set #did_end gti.var 1",
         "function gti:finale/curtain",
         "execute as @a[tag=gti.player] at @s run playsound minecraft:block.deepslate_bricks.place master @s ~ ~ ~ 0.7 0.8",
     ])
     f["finale/end2"] = mc([
+        "scoreboard players set #did_end2 gti.var 1",
         "function gti:fx/restore",
         'data modify storage gti:cfg status set value "PRESS START"',
         "function gti:hud/refresh",
@@ -850,8 +972,7 @@ def game_functions(vd: dict) -> dict[str, str]:
     f["fx/curtain_open"] = mc(
         [
             f"execute as @e[tag=gti.shutter,tag=gti.col{col}] run data merge entity @s "
-            f"{{start_interpolation:0,interpolation_duration:0,transformation:"
-            f"{{scale:[1f,16f,0.3f],translation:[0f,18.2f,0f],left_rotation:[0f,0f,0f,1f],right_rotation:[0f,0f,0f,1f]}}}}"
+            f"{{start_interpolation:0,interpolation_duration:0,transformation:{open_nbt}}}"
             for col in range(COLS)
         ]
     )
@@ -866,6 +987,7 @@ def game_functions(vd: dict) -> dict[str, str]:
         "data remove entity @s attack",
     ])
     f["click"] = mc([
+        "execute unless score #state gti.var matches 2 on target run tellraw @s {\"text\":\"No round is running - press START ROUND in the menu.\",\"color\":\"gray\"}",
         "execute unless score #state gti.var matches 2 run return run data remove entity @s interaction",
         "execute on target run tag @s add gti.player",
         "execute on target run scoreboard players add @s gti.tries 1",
@@ -875,6 +997,7 @@ def game_functions(vd: dict) -> dict[str, str]:
         "function gti:hud/refresh",
     ])
     f["click/attack"] = mc([
+        "execute unless score #state gti.var matches 2 on attacker run tellraw @s {\"text\":\"No round is running - press START ROUND in the menu.\",\"color\":\"gray\"}",
         "execute unless score #state gti.var matches 2 run return run data remove entity @s attack",
         "execute on attacker run tag @s add gti.player",
         "execute on attacker run scoreboard players add @s gti.tries 1",

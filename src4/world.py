@@ -32,6 +32,8 @@ from model import (
     Z_BACKING,
     Z_CLICK,
     Z_SHUTTER,
+    SHUTTER_Y,
+    shutter_transform,
     Z_STONE,
     block_display,
     fnum,
@@ -124,15 +126,15 @@ def build_world(vd: dict) -> list[str]:
             out.append(_set_id(x, y, Z_CLICK, "gti.click", index))
 
     # -- bedrock curtain -------------------------------------------------
+    # Spawned CLOSED: it covers the window until the round starts. Opening it
+    # collapses it into the lintel instead of lifting it above the wall.
+    closed = shutter_transform(False)
     for col in range(COLS):
         x = X0 + col
         out.append(
-            block_display("bedrock", x, Y0 + 7.5, Z_SHUTTER, 1.0, 16.0, 0.3,
+            block_display("bedrock", x, SHUTTER_Y, Z_SHUTTER, 1.0, 16.0, 0.3,
                           ("gti.entity", "gti.shutter", f"gti.col{col}"),
-                          transformation={
-                              "scale": [1.0, 16.0, 0.3],
-                              "translation": [0.0, 17.4, 0.0],
-                          })
+                          transformation=closed)
         )
 
     # -- attempt strip ---------------------------------------------------
@@ -165,7 +167,7 @@ def world_text(vd: dict) -> list[str]:
     out.append(text_display(line("REVEAL THE PICTURE  •  GUESS THE ITEM", BLUE, True),
                             0, 23.05, 0.40, 0.54, tag_list=("gti.entity", "gti.text")))
 
-    out.append(text_display(line("READY", AQUA, True), 0, 20.25, 0.46, 0.62,
+    out.append(text_display(line("READY", AQUA, True), 0, 20.30, 0.46, 0.62,
                             tag_list=("gti.entity", "gti.text", "gti.hud.hint")))
     out.append(text_display(line("", GREEN, True), 0, 0.80, 1.30, 0.52,
                             tag_list=("gti.entity", "gti.text", "gti.hud.status")))

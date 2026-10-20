@@ -73,6 +73,25 @@ FRAME_BOTTOM = 2
 FRAME_TOP = 19
 
 STRIP_Y = 21.6                  # centre of the attempt pips
+
+# bedrock curtain: closed covers the whole window, open collapses into the
+# lintel so it is never visible as a floating slab above the wall.
+SHUTTER_Y = Y0 + 7.5            # 10.5 - centre of the curtain entity
+SHUTTER_CLOSED = {"scale": [1.0, 16.0, 0.3], "translation": [0.0, 0.0, 0.0]}
+SHUTTER_OPEN = {"scale": [1.0, 0.02, 0.3], "translation": [0.0, 8.46, -0.9]}
+
+
+def shutter_transform(opened: bool) -> dict:
+    spec = SHUTTER_OPEN if opened else SHUTTER_CLOSED
+    return {"scale": list(spec["scale"]), "translation": list(spec["translation"])}
+
+
+def transform_nbt(spec: dict) -> str:
+    """Render a display transformation as SNBT."""
+    return (
+        f"{{scale:{_tup(spec['scale'])},translation:{_tup(spec['translation'])}"
+        f",left_rotation:[0f,0f,0f,1f],right_rotation:[0f,0f,0f,1f]}}"
+    )
 STRIP_LEFT = -8.0
 STRIP_PITCH = 0.5
 STRIP_MAX = 32
@@ -82,6 +101,10 @@ VIEW_YAW = 180.0
 VIEW_PITCH = -17.0
 
 
+def _tup(values) -> str:
+    return "[" + ",".join(f"{fnum(v)}f" for v in values) + "]"
+
+
 def fnum(value: float) -> str:
     text = f"{value:.3f}".rstrip("0").rstrip(".")
     return text if text not in ("-0", "") else "0"
@@ -89,10 +112,6 @@ def fnum(value: float) -> str:
 
 def tags(*values: str) -> str:
     return ",".join(f'"{v}"' for v in values)
-
-
-def _tup(values) -> str:
-    return "[" + ",".join(f"{fnum(v)}f" for v in values) + "]"
 
 
 def block_display(
